@@ -1,0 +1,38 @@
+version: '3.8'
+
+name: edb-server
+services:
+  # 1. Ollama サービス
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434" # 必要に応じて外部公開
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    # # GPUを使う場合はここにdeployブロックを追加
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  # 2. Golang API サーバー
+  api:
+    build: .
+    container_name: edb-go
+    ports:
+      - "8080:8080"
+    environment: # 環境変数
+      - OLLAMA_HOST=http://ollama:11434
+      - OLLAMA_MODEL=qwen2.5-coder:7B
+      - PORT=8080
+    depends_on:
+      - ollama
+    restart: unless-stopped
+
+volumes:
+  ollama_data:
